@@ -6,8 +6,9 @@ from datetime import datetime
 from aiohttp import web
 
 
+# 主页
 def index(request):
-    return web.Response(body=b'<h1>Awesome</h1>')
+    return web.Response(body=b'<h1>Awesome</h1>', content_type="text/http")
 
 
 async def init(loop):
