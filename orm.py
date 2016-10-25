@@ -18,6 +18,7 @@ class Model(dict):
     def getValue(self, key):
         return getattr(self, key, None)
 
+    # 用于创建Model对象时设置一些缺省值
     def getValueOrDefault(self, key):
         value = getattr(self, key, None)
         if value is None:
@@ -29,12 +30,93 @@ class Model(dict):
 
         return value
 
+    # 接下来是Model中最重要的部分，增删改查的映射方法
+    # 查找当然是类方法
+    # findAll找到所有满足条件的行
+    @classmethod
+    async def findAll(cls, where=None, args=None, **kw):
+        ' find objects by where clause '
+        # 使用默认的select语句
+        sql = [cls.__select__]
+        # 拼接查询条件
+        if where:
+            sql.append('where')
+            sql.append(where)
+
+        if args is None:
+            args = []
+
+        # 获取orderBy参数
+        orderBy = kw.get('orderBy', None)
+        if orderBy:
+            sql.append('order by')
+            sql.append(orderBy)
+
+        # 获取limit参数
+        limit = kw.get('limit', None)
+        if limit:
+            sql.append('limit')
+            # 判断limit类型，如果是单个数字
+            if isinstance(limit, int):
+                sql.append('?')
+                args.append(limit)
+            # 如果是(1,5)的形式
+            elif isinstance(limit, tuple) and len(limit) == 2:
+                sql.append('?')
+                args.append(limit)
+            else:
+                raise ValueError('Invalid limit value: %s' % str(limit))
+
+        rs = await select(' '.join(sql), args)
+        return [cls(**r) for r in rs]
+
+    # 查找满足条件的行的个数
+    @classmethod
+    async def findNumber(cls, selectField, where=None, args=None):
+        ' find number by select and where. '
+        sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__)]
+        if where:
+            sql.append('where')
+            sql.append(where)
+
+        rs = await select(' '.join(sql), args, 1)
+        if len(rs) == 0:
+            return None
+        return rs[0]['_num_']
+
+    # 通过主键找到一个元素
+    @classmethod
+    async def find(cls, pk):
+        ' find object by primary key. '
+        rs = await select('%s where `%s`=?' % (cls.__select__, cls.__primary_key__), [pk], 1)
+        if len(rs) == 0:
+            return None
+        return cls(**rs[0])
+
+    # 除了查之外，其他三个操作都是对单个元素的操作（在数据库中当然未必，不过在ORM中，就是如此）
+    # 插入操作通过save方法来实现
     async def save(self):
         args = list(map(self.getValueOrDefault, self.__fields__))
         args.append(self.getValueOrDefault(self.__primary_key__))
         rows = await execute(self.__insert__, args)
         if rows != 1:
             logging.warning('failed to insert record: affected rows: %s' % rows)
+
+    # 更新操作
+    async def update(self):
+        # 对每一个列属性执行getValue方法获取其值
+        args = list(map(self.getValue, self.__fields__))
+        args.append(self.getValue(self.__primary_key__))
+        rows = await execute(self.__update__, args)
+        if rows != 1:
+            logging.warning('failed to update by primary key: affected rows: %s' % rows)
+
+    # 删除操作
+    async def remove(self):
+        args = [self.getValue(self.__primary_key__)]
+        rows = await execute(self.__delete__, args)
+        if rows != 1:
+            logging.warning('failed to remove by primary key: affected rows: %s' % rows)
 
 
 # ORM中最重要的东西，元类。创建类对象的类，可谓之类中之类
