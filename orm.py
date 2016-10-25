@@ -31,7 +31,7 @@ class Model(dict):
 
     async def save(self):
         args = list(map(self.getValueOrDefault, self.__fields__))
-        args.append(self.getValueOrDefault((self.__primary_key__)))
+        args.append(self.getValueOrDefault(self.__primary_key__))
         rows = await execute(self.__insert__, args)
         if rows != 1:
             logging.warning('failed to insert record: affected rows: %s' % rows)
