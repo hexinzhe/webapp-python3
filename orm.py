@@ -90,8 +90,8 @@ class ModelMetaclass(type):
         attrs['__fields__'] = fields  # 除主键外的属性名
 
         # 构造默认的SELECT, INSERT, UPDATE, DELETE语句：
-        attrs['__select__'] = 'select * from `%s`' % (tableName)
-        attrs['__insert__'] = 'insert into `%s` VALUES (%s)' % (tableName, 'values')
+        attrs['__select__'] = 'select * from `%s`' % tableName
+        attrs['__insert__'] = 'insert into `%s` VALUES (%s)' % (tableName, create_args_string(len(fields) + 1))
         attrs['__update__'] = 'update `%s` set %s WHERE `%s`=?' %\
                               (tableName, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
         attrs['__delete__'] = 'delete from `%s` WHERE `%s`=?' % (tableName, primaryKey)
@@ -120,8 +120,26 @@ class StringField(Field):
 
 class IntegerField(Field):
     # 默认映射类型为bigint
-    def __init__(self, name=None, primary_key=False, default=None, map_type='bigint'):
-        super().__init__(name, map_type, primary_key, default)
+    def __init__(self, name=None, primary_key=False, default=0):
+        super().__init__(name, 'bigint', primary_key, default)
+
+
+class BooleanField(Field):
+    # bool值的可设置属性较少
+    def __init__(self, name=None, default=False):
+        super().__init__(name, 'boolean', False, default)
+
+
+class FloatField(Field):
+    # real就是float
+    def __init__(self, name=None, primary_key=False, default=0.0):
+        super().__init__(name, 'real', primary_key, default)
+
+
+class TextField(Field):
+    def __init__(self, name=None, default=None):
+        super().__init__(name, 'text', False, default)
+
 
 # 创建连接池
 async def create_pool(loop, **kw):
@@ -145,7 +163,7 @@ async def create_pool(loop, **kw):
 
 # 映射select语句
 async def select(sql, args, size=None):
-    logging.log(sql, args)
+    log(sql, args)
 
     global __pool
 
@@ -171,7 +189,7 @@ async def select(sql, args, size=None):
 
 # 增删改全在一个函数里
 async def execute(sql, args):
-    logging.log(sql)
+    log(sql)
     with await __pool as conn:
         try:
             cur = await conn.cursor()
@@ -183,4 +201,18 @@ async def execute(sql, args):
             raise
         return affected
 
+
+# 用于输出格式化的SQL执行语句
+def log(sql, args=()):
+    escape_sql = sql.replace('?', '%s')
+    logging.info('SQL: %s' % escape_sql, args)
+
+
+# 用于执行insert语句时创建参数占位'?'，因为insert语句参数较多，所以封装一个函数。有几个列属性，就创建几个占位符
+def create_args_string(num):
+    L = []
+    for n in range(num):
+        L.append('?')
+
+    return ', '.join(L)
 
