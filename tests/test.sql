@@ -1,0 +1,10 @@
+DROP DATABASE IF EXISTS awesome;
+
+CREATE DATABASE awesome;
+
+USE awesome;
+
+CREATE TABLE users (
+  `id` VARCHAR(50) NOT NULL PRIMARY KEY ,
+  `name` VARCHAR(50) NOT NULL
+) ENGINE = innodb DEFAULT CHARSET = utf8
