@@ -4,8 +4,8 @@ import uuid
 import pytest
 import time
 
-import orm
-from orm import Model, StringField
+from www import orm
+from www.orm import Model, StringField
 
 
 def next_id():
