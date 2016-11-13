@@ -8,7 +8,7 @@ from aiohttp import web
 
 async def logger_factory(app, handler):
     async def logger(request):
-        logging.info('Request: %s %s' % (request.__method__, request.__route__))
+        logging.info('Request: %s %s' % (request.method, request.route))
         return await handler(request)
     return logger
 
