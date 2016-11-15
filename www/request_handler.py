@@ -9,8 +9,9 @@ from www.errors import APIError
 
 
 def request_handler(func):
-    func = asyncio.coroutine(func)
-
+    # 本框架中最重要的函数，处理handle，将事先通过data_factory处理好的data（放在request.__data__中）与handle的参数
+    # 相互匹配，并进行参数检查。最后调用handle，传入从data中获取到的值，返回handle执行后的返回值，供response_factory
+    # 处理包装成response成品
     async def response(request):
         required_args = inspect.signature(func).parameters
         logging.info('required args: %s' % required_args)
@@ -63,16 +64,19 @@ def add_routes(app, module_name):
         if callable(fn) and hasattr(fn, '__method__') and hasattr(fn, '__route__'):
             logging.info('add route %s %s => %s(%s)' % (fn.__method__, fn.__route__, fn.__name__,
                                                         ', '.join(inspect.signature(fn).parameters.keys())))
-            handled_fn = request_handler(fn)
-            app.router.add_route(fn.__method__, fn.__route__, handled_fn)
+            app.router.add_route(fn.__method__, fn.__route__, request_handler(fn))
 
 
 # 生成GET等请求方法的装饰器
 def request(path, *, method):
     def decorator(func):
         @functools.wraps(func)
-        def wrapper(*args, **kw):
-            return func(*args, **kw)
+        async def wrapper(*args, **kw):
+            # 将被修饰的handle包装为coroutine，如果其本身就是coroutine，该函数内部会自行判断，无需自己手动判断
+            # 通过这一步，使得handle也可以是"非coroutine function"。
+            # 这句话不能随意加，之前加在request_handler的第一句，结果导致coroutine被多包装一次
+            corofunc = asyncio.coroutine(func)
+            return await corofunc(*args, **kw)
         wrapper.__method__ = method
         wrapper.__route__ = path
         return wrapper

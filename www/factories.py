@@ -16,7 +16,7 @@ async def logger_factory(app, handler):
 async def data_factory(app, handler):
     async def parse_data(request):
         logging.info('data_factory run...')
-        if request.__method__ in ('POST', 'PUT'):
+        if request.method in ('POST', 'PUT'):
             if request.content_type:
                 return web.HTTPBadRequest(text='Missing Content_Type')
             content_type = request.content_type.lower()
@@ -31,7 +31,7 @@ async def data_factory(app, handler):
                 logging.info('request form: %s' % request.__data__)
             else:
                 return web.HTTPBadRequest(text='Unsupported Content-Type: %s' % content_type)
-        elif request.__method__ == 'GET':
+        elif request.method == 'GET':
             qs = request.query_string
             request.__data__ = {k:v[0] for k, v in parse.parse_qs(qs, True).items()}
             logging.info('request query: %s' % request.__data__)
