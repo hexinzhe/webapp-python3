@@ -3,6 +3,8 @@ import inspect
 import logging
 
 import functools
+import os
+
 from aiohttp import web
 
 from www.errors import APIError
@@ -65,6 +67,12 @@ def add_routes(app, module_name):
             logging.info('add route %s %s => %s(%s)' % (fn.__method__, fn.__route__, fn.__name__,
                                                         ', '.join(inspect.signature(fn).parameters.keys())))
             app.router.add_route(fn.__method__, fn.__route__, request_handler(fn))
+
+
+def add_static(app):
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    app.router.add_static('/static/', path)
+    logging.info('add static %s => %s' % ('/static/', path))
 
 
 # 生成GET等请求方法的装饰器
