@@ -12,6 +12,6 @@ configs = {
         'db': 'webdata'
     },
     'session': {
-        'secret': 'Awesome'
+        'secret': 'AwEsomE_SEcreT'
     }
 }
