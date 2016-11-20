@@ -2,7 +2,7 @@ import logging; logging.basicConfig(level=logging.INFO)
 
 from www import config, init_jinja2, datetime_filter
 from www import orm
-from www.factories import logger_factory, data_factory, response_factory
+from www.factories import logger_factory, data_factory, response_factory, auth_factory
 from www.request_handler import add_routes, add_static
 import asyncio, os, json, time
 from aiohttp import web
@@ -11,7 +11,7 @@ from aiohttp import web
 async def init(loop):
     await orm.create_pool(loop, **config.configs['db'])
     app = web.Application(loop=loop, middlewares=[
-        logger_factory, data_factory, response_factory
+        logger_factory, data_factory, auth_factory, response_factory
     ])
     init_jinja2(app, filters=dict(datetime=datetime_filter))
     add_routes(app, 'handles')
