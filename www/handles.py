@@ -99,7 +99,7 @@ def index(*, page='1'):
 
 
 # 进入指定 blog
-@get('blog/{id}')
+@get('/blog/{id}')
 async def get_blog(id):
     blog = await Blog.find(id)
     comments = await Comment.findAll('blog_id=?', [id], orderBy='created_at desc')
@@ -158,11 +158,11 @@ def manage_create_blog():
 
 
 # 一件是修改，传 id 为要修改的 blog id ，表单提交到/api/blogs/:blog_id
-@get('manage/blog/edit')
+@get('/manage/blogs/edit')
 def manage_edit_blog(*, id):
     return {
         '__template__': 'manage_blog_edit.html',
-        'id': 'id',
+        'id': id,
         'action': '/api/blogs/%s' % id
     }
 
@@ -272,6 +272,31 @@ async def api_get_users(*, page='1'):
 async def api_get_blog(*, id):
     blog = await Blog.find(id)
     return blog
+
+
+@post('/api/blogs/{id}')
+def api_update_blog(id, request, *, name, summary, content):
+    check_admin(request)
+    blog = yield from Blog.find(id)
+    if not name or not name.strip():
+        raise APIValueError('name', 'name cannot be empty.')
+    if not summary or not summary.strip():
+        raise APIValueError('summary', 'summary cannot be empty.')
+    if not content or not content.strip():
+        raise APIValueError('content', 'content cannot be empty.')
+    blog.name = name.strip()
+    blog.summary = summary.strip()
+    blog.content = content.strip()
+    yield from blog.update()
+    return blog
+
+
+@post('/api/blogs/{id}/delete')
+def api_delete_blog(request, *, id):
+    check_admin(request)
+    blog = yield from Blog.find(id)
+    yield from blog.remove()
+    return dict(id=id)
 
 
 # 获取指定页数的 blogs，用于首页和/manage/blogs

@@ -20,7 +20,7 @@ async def data_factory(app, handler):
     async def parse_data(request):
         logging.info('data_factory run...')
         if request.method in ('POST', 'PUT'):
-            if request.content_type:
+            if not request.content_type:
                 return web.HTTPBadRequest(text='Missing Content_Type')
             content_type = request.content_type.lower()
             if content_type.startswith('application/json'):
@@ -55,6 +55,8 @@ async def auth_factory(app, handler):
             if user:
                 logging.info('set current user: %s' % user.email)
                 request.__user__ = user
+        if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
+            return web.HTTPFound('/signin')
 
         return await handler(request)
     return auth
@@ -79,10 +81,12 @@ async def response_factory(app, handler):
         if isinstance(r, dict):
             template = r.get('__template__')
             if template is None:
-                resp = web.Response(body=json.dumps(r, ensure_ascii=False).encode('utf-8'))
+                resp = web.Response(body=json.dumps(r, ensure_ascii=False, default=lambda o: o.__dict__).encode('utf-8'))
                 resp.content_type = 'application/json;charset=utf-8'
                 return resp
             else:
+                if request.__user__:
+                    r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp

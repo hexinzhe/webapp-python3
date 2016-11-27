@@ -6,6 +6,7 @@
 
 <script>
 function initVM(data) {
+    $('#vm').show();
     var vm = new Vue({
         el: '#vm',
         data: {
@@ -28,7 +29,6 @@ function initVM(data) {
             }
         }
     });
-    $('#vm').show();
 }
 $(function() {
     getJSON('/api/blogs', {
@@ -64,7 +64,7 @@ $(function() {
         <span><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i> 正在加载...</span>
     </div>
 
-    <div id="vm" class="uk-width-1-1">
+    <div id="vm" class="uk-width-1-1" style="display: none">
         <a href="/manage/blogs/create" class="uk-button uk-button-primary"><i class="uk-icon-plus"></i> 新日志</a>
 
         <table class="uk-table uk-table-hover">
@@ -77,7 +77,7 @@ $(function() {
                 </tr>
             </thead>
             <tbody>
-                <tr v-repeat="blog: blogs" >
+                <tr v-repeat="blog: blogs">
                     <td>
                         <a target="_blank" v-attr="href: '/blog/'+blog.id" v-text="blog.name"></a>
                     </td>
@@ -88,8 +88,8 @@ $(function() {
                         <span v-text="blog.created_at.toDateTime()"></span>
                     </td>
                     <td>
-                        <a href="#0" v-on="click: edit_blog(blog)"><i class="uk-icon-edit"></i>
-                        <a href="#0" v-on="click: delete_blog(blog)"><i class="uk-icon-trash-o"></i>
+                        <a href="#0" v-on="click: edit_blog(blog)"><i class="uk-icon-edit"></i></a>
+                        <a href="#0" v-on="click: delete_blog(blog)"><i class="uk-icon-trash-o"></i></a>
                     </td>
                 </tr>
             </tbody>

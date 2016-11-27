@@ -128,8 +128,8 @@ class Model(dict, metaclass=ModelMetaclass):
                 args.append(limit)
             # 如果是(1,5)的形式
             elif isinstance(limit, tuple) and len(limit) == 2:
-                sql.append('?')
-                args.append(limit)
+                sql.append('?,?')
+                args.extend(limit)
             else:
                 raise ValueError('Invalid limit value: %s' % str(limit))
 
